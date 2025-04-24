@@ -7,22 +7,22 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # Esto hará que se ejecute en tu notebook
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Install sshpass
-        run: sudo apt-get install -y sshpass
-
       - name: Backup, Deploy and Restart
+        shell: wsl.exe {0}  # Usamos WSL para ejecutar los comandos
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
           DATE=$(date +%Y%m%d_%H%M%S)
-          sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -o StrictHostKeyChecking=no root@192.168.200.11 "
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no root@192.168.200.11 "
             if [ -d /home/gaesa/src/modulos ]; then
-              mv /home/gaesa/src/modulos /home/gaesa/src/modulos_backup_$DATE;
+              mv /home/gaesa/src/modulos /home/gaesa/src/modulos_backup_\$DATE;
             fi
           "
-          sshpass -p '${{ secrets.SSH_PASSWORD }}' rsync -avz --delete ./src/modulos/ root@192.168.200.11:/home/gaesa/src/modulos/
-          sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -o StrictHostKeyChecking=no root@192.168.200.11 "docker restart gaesa"
+          sshpass -p "$SSH_PASSWORD" rsync -avz --delete ./src/modulos/ root@192.168.200.11:/home/gaesa/src/modulos/
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no root@192.168.200.11 "docker restart gaesa"
