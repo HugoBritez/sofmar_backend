@@ -18,4 +18,4 @@ jobs:
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          wsl -e bash -c "export DATE=$(date +%Y%m%d_%H%M%S); sshpass -p \"$env:SSH_PASSWORD\" ssh -o StrictHostKeyChecking=no root@192.168.200.11 \"if [ -d /home/gaesa/src/modulos ]; then mv /home/gaesa/src/modulos /home/gaesa/src/modulos_backup_$DATE; fi\"; sshpass -p \"$env:SSH_PASSWORD\" rsync -avz --delete ./src/modulos/ root@192.168.200.11:/home/gaesa/src/modulos/; sshpass -p \"$env:SSH_PASSWORD\" ssh -o StrictHostKeyChecking=no root@192.168.200.11 \"docker restart gaesa\""
+          wsl -e bash -c "sshpass -p \"$env:SSH_PASSWORD\" rsync -avz --delete ./src/modulos/ root@192.168.200.11:/home/gaesa/src/modulos/; sshpass -p \"$env:SSH_PASSWORD\" ssh -o StrictHostKeyChecking=no root@192.168.200.11 \"docker restart gaesa\""
