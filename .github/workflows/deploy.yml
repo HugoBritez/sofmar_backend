@@ -3,7 +3,7 @@ name: Deploy Modulos to Remote Server
 on:
   push:
     branches:
-      - rama_de_sebastian
+      - main
 
 jobs:
   deploy:
