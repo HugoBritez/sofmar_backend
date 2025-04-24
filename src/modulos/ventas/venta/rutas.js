@@ -34,7 +34,7 @@ router.post('/actualizar-cdc', seguridad(), actualizarCdc);
 router.get('/ventas-agenda', seguridad(), ventasAgenda);
 
 
-//HOLA SOY UN TEST
+//HOLA SOY UN TEST 222
 
 async function ventasAgenda(req, res, next){
   try{
