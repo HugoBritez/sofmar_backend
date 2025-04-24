@@ -33,6 +33,9 @@ router.get('/venta-edicion', seguridad(), ventaEdicion);
 router.post('/actualizar-cdc', seguridad(), actualizarCdc);
 router.get('/ventas-agenda', seguridad(), ventasAgenda);
 
+
+//HOLA SOY UN TEST
+
 async function ventasAgenda(req, res, next){
   try{
     const result = await controlador.getVentasParaAgenda(req.query.vendedor, req.query.cliente, req.query.busqueda)
