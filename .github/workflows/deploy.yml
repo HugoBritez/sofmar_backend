@@ -1,0 +1,28 @@
+name: Deploy Modulos to Remote Server
+
+on:
+  push:
+    branches:
+      - rama_de_sebastian
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Backup, Deploy and Restart
+        run: |
+          DATE=$(date +%Y%m%d_%H%M%S)
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -o StrictHostKeyChecking=no root@192.168.200.11 "
+            if [ -d /home/gaesa/src/modulos ]; then
+              mv /home/gaesa/src/modulos /home/gaesa/src/modulos_backup_$DATE;
+            fi
+          "
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' rsync -avz --delete ./src/modulos/ root@192.168.200.11:/home/gaesa/src/modulos/
+          sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -o StrictHostKeyChecking=no root@192.168.200.11 "docker restart gaesa"

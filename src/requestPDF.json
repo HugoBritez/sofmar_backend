@@ -1,0 +1,29 @@
+{
+    "type": "PADES_BASIC",
+    "keyStore": {
+        "id": 423,
+        "credentials": {
+            "secret": "123456"
+        }
+    },
+    "appearance": {
+        "location": {
+            "page": 1,
+            "frame": {
+                "lowerLeft": {
+                    "x": 100,
+                    "y": 100
+                },
+                "upperRight": {
+                    "x": 300,
+                    "y": 200
+                }
+            }
+        },
+        "width": 50,
+        "height": 50,
+        "text": {
+            "value": "Firmado digitalmente por: Sofmar Sistemas"
+        }
+    }
+}
