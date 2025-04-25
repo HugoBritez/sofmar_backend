@@ -1129,49 +1129,60 @@ module.exports = function (dbInyectada) {
   };
 
   async function reporte_inventario(
-    id_inventario = null,
-    categorias = [],
-    incluir_sin_cambios = false
-  ) {
-    try {
-      // Construir condiciones de filtro
-      let filtros = [];
+  id_inventario = null,
+  categorias = [],
+  incluir_sin_cambios = false,
+  fecha_inicio = null,
+  fecha_fin = null,
+  deposito = null,
+) {
+  try {
+    // Construir condiciones de filtro
+    let filtros = [];
 
-      // Filtro por inventario específico
-      if (id_inventario) {
-        filtros.push(`i.id_inventario = ${id_inventario}`);
-      }
+    // Filtro por inventario específico
+    if (id_inventario) {
+      filtros.push(`i.id_inventario = ${id_inventario}`);
+    }
 
-      // Filtro por categorías específicas
-      if (categorias && categorias.length > 0) {
-        filtros.push(`ca.ca_codigo IN (${categorias.join(",")})`);
-      } else {
-        // Por defecto excluimos la categoría 1 (que parece ser una categoría especial)
-        filtros.push(`ca.ca_codigo NOT IN (1)`);
-      }
+    // Filtro por rango de fechas
+    if (fecha_inicio && fecha_fin) {
+      filtros.push(`DATE(ia.fecha) BETWEEN DATE('${fecha_inicio}') AND DATE('${fecha_fin}')`);
+    } else if (fecha_inicio) {
+      filtros.push(`DATE(ia.fecha) >= DATE('${fecha_inicio}')`);
+    } else if (fecha_fin) {
+      filtros.push(`DATE(ia.fecha) <= DATE('${fecha_fin}')`);
+    }
 
-      // Construir la condición de diferencias
-      let condicionDiferencias;
-      if (incluir_sin_cambios) {
-        // Incluir todos los ítems, incluso los que no tienen diferencias
-        condicionDiferencias = `1=1`;
-      } else {
-        // Solo ítems con diferencias o no escaneados
-        condicionDiferencias = `
+    if(deposito) {
+      filtros.push(`ia.deposito = ${deposito}`);
+    }
+
+
+    // Filtro por categorías específicas
+    if (categorias && categorias.length > 0) {
+      filtros.push(`ca.ca_codigo IN (${categorias.join(",")})`);
+    } else {
+      // Por defecto excluimos la categoría 1
+      filtros.push(`ca.ca_codigo NOT IN (1)`);
+    }
+
+    // Construir la condición de diferencias
+    if (!incluir_sin_cambios) {
+      // Solo ítems con diferencias o no escaneados
+      filtros.push(`
         (
           (i.cantidad_scanner IS NOT NULL AND i.cantidad_scanner != i.cantidad_inicial)
           OR
           (i.cantidad_scanner IS NULL AND i.cantidad_inicial != 0)
         )
-      `;
-        filtros.push(condicionDiferencias);
-      }
+      `);
+    }
 
-      // Combinar todos los filtros
-      const whereClause =
-        filtros.length > 0 ? `WHERE ${filtros.join(" AND ")}` : "";
+    // Combinar todos los filtros
+    const whereClause = filtros.length > 0 ? `WHERE ${filtros.join(" AND ")}` : "";
 
-      const query = `
+    const query = `
       SELECT
         ia.id as id_inventario,
         ia.nro_inventario,
@@ -1218,74 +1229,74 @@ module.exports = function (dbInyectada) {
       ORDER BY ca.ca_descripcion ASC, ar.ar_descripcion ASC
     `;
 
-      console.log("Ejecutando consulta de reporte de inventario:", query);
-      const resultados = await db.sql(query);
+    console.log("Ejecutando consulta de reporte de inventario:", query);
+    const resultados = await db.sql(query);
 
-      // Agregar estadísticas adicionales
-      if (resultados.length > 0) {
-        // Calcular totales
-        const totalItems = resultados.length;
-        const totalValorDiferencia = resultados.reduce(
+    // Agregar estadísticas adicionales
+    if (resultados.length > 0) {
+      // Calcular totales
+      const totalItems = resultados.length;
+      const totalValorDiferencia = resultados.reduce(
+        (sum, item) => sum + parseFloat(item.valor_diferencia_numero || 0),
+        0
+      );
+      const totalGanancias = resultados.filter(
+        (item) => item.tipo_diferencia === "GANANCIA"
+      ).length;
+      const totalPerdidas = resultados.filter(
+        (item) => item.tipo_diferencia === "PERDIDA"
+      ).length;
+      const valorGanancias = resultados
+        .filter((item) => item.tipo_diferencia === "GANANCIA")
+        .reduce(
           (sum, item) => sum + parseFloat(item.valor_diferencia_numero || 0),
           0
         );
-        const totalGanancias = resultados.filter(
-          (item) => item.tipo_diferencia === "GANANCIA"
-        ).length;
-        const totalPerdidas = resultados.filter(
-          (item) => item.tipo_diferencia === "PERDIDA"
-        ).length;
-        const valorGanancias = resultados
-          .filter((item) => item.tipo_diferencia === "GANANCIA")
-          .reduce(
-            (sum, item) => sum + parseFloat(item.valor_diferencia_numero || 0),
-            0
-          );
-        const valorPerdidas = resultados
-          .filter((item) => item.tipo_diferencia === "PERDIDA")
-          .reduce(
-            (sum, item) => sum + parseFloat(item.valor_diferencia_numero || 0),
-            0
-          );
+      const valorPerdidas = resultados
+        .filter((item) => item.tipo_diferencia === "PERDIDA")
+        .reduce(
+          (sum, item) => sum + parseFloat(item.valor_diferencia_numero || 0),
+          0
+        );
 
-        // Agregar resumen al resultado
-        const resumen = {
-          total_items: totalItems,
-          total_ganancias: totalGanancias,
-          total_perdidas: totalPerdidas,
-          valor_ganancias: valorGanancias,
-          valor_perdidas: valorPerdidas,
-          valor_diferencia_neto: totalValorDiferencia,
-          valor_ganancias_formato: formatearNumero(valorGanancias),
-          valor_perdidas_formato: formatearNumero(Math.abs(valorPerdidas)),
-          valor_diferencia_neto_formato: formatearNumero(totalValorDiferencia),
-        };
-
-        return {
-          resumen,
-          items: resultados,
-        };
-      }
+      // Agregar resumen al resultado
+      const resumen = {
+        total_items: totalItems,
+        total_ganancias: totalGanancias,
+        total_perdidas: totalPerdidas,
+        valor_ganancias: valorGanancias,
+        valor_perdidas: valorPerdidas,
+        valor_diferencia_neto: totalValorDiferencia,
+        valor_ganancias_formato: formatearNumero(valorGanancias),
+        valor_perdidas_formato: formatearNumero(Math.abs(valorPerdidas)),
+        valor_diferencia_neto_formato: formatearNumero(totalValorDiferencia),
+      };
 
       return {
-        resumen: {
-          total_items: 0,
-          total_ganancias: 0,
-          total_perdidas: 0,
-          valor_ganancias: 0,
-          valor_perdidas: 0,
-          valor_diferencia_neto: 0,
-          valor_ganancias_formato: "0",
-          valor_perdidas_formato: "0",
-          valor_diferencia_neto_formato: "0",
-        },
-        items: [],
+        resumen,
+        items: resultados,
       };
-    } catch (error) {
-      console.error("Error al generar reporte de inventario:", error);
-      throw error;
     }
+
+    return {
+      resumen: {
+        total_items: 0,
+        total_ganancias: 0,
+        total_perdidas: 0,
+        valor_ganancias: 0,
+        valor_perdidas: 0,
+        valor_diferencia_neto: 0,
+        valor_ganancias_formato: "0",
+        valor_perdidas_formato: "0",
+        valor_diferencia_neto_formato: "0",
+      },
+      items: [],
+    };
+  } catch (error) {
+    console.error("Error al generar reporte de inventario:", error);
+    throw error;
   }
+}
 
   // Función auxiliar para formatear números
   function formatearNumero(numero) {

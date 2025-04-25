@@ -216,11 +216,14 @@ async function get_anomalias(req, res) {
 router.get("/reporte", seguridad(), get_reporte);
 
 async function get_reporte(req, res) {
-  const { id_inventario, categorias, incluir_sin_cambios } = req.query;
+  const { id_inventario, categorias, incluir_sin_cambios, fecha_inicio, fecha_fin, deposito } = req.query;
   const resultado = await controlador.reporte_inventario(
     id_inventario,
     categorias,
-    incluir_sin_cambios
+    incluir_sin_cambios,
+    fecha_inicio,
+    fecha_fin,
+    deposito
   );
   respuesta.success(req, res, resultado, 200);
 }
