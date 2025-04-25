@@ -1,13 +1,22 @@
-name: Deploy Modulos to Remote Server
+name: Deploy Modulos to Remote Servers
 
 on:
   push:
     branches:
       - main
-
+  workflow_dispatch:
+    inputs:
+      cliente:
+        description: 'Cliente específico a desplegar'
+        required: true
+        type: choice
+        options:
+          - gaesa
+          - gaesademo
 
 jobs:
-  deploy:
+  deploy-single:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: self-hosted
 
     steps:
@@ -18,5 +27,71 @@ jobs:
         shell: powershell
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_USER: root
+          CLIENTE: ${{ github.event.inputs.cliente }}
         run: |
-          wsl -e bash -c "sshpass -p '$env:SSH_PASSWORD' rsync -avz --delete ./src/modulos/ root@192.168.200.11:/home/gaesa/src/modulos/ && sshpass -p '$env:SSH_PASSWORD' ssh -o StrictHostKeyChecking=no root@192.168.200.11 'docker restart gaesa'"
+          $targetServer = if ($env:CLIENTE -eq "gaesa") {
+            "192.168.102.7"
+          } else {
+            "192.168.200.11"
+          }
+          
+          $targetPath = if ($env:CLIENTE -eq "gaesa") {
+            "/var/www/appgaesa/src/modulos/"
+          } else {
+            "/home/gaesa/src/modulos/$env:CLIENTE/"
+          }
+          
+          $restartCommand = if ($env:CLIENTE -eq "gaesa") {
+            "systemctl restart appgaesa"
+          } else {
+            "docker restart $env:CLIENTE"
+          }
+          
+          $command = "sshpass -p '$env:SSH_PASSWORD' rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete ./src/modulos/ $env:SSH_USER@$targetServer`:$targetPath && sshpass -p '$env:SSH_PASSWORD' ssh -o StrictHostKeyChecking=no $env:SSH_USER@$targetServer '$restartCommand'"
+          wsl -e bash -c "$command"
+
+  deploy-all:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        cliente: [
+          'gaesa',
+          'gaesademo',
+          'lobeck'
+          # Aquí puedes agregar más clientes según necesites
+        ]
+      fail-fast: false
+      
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Deploy using WSL
+        shell: powershell
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_USER: root
+          CLIENTE: ${{ matrix.cliente }}
+        run: |
+          $targetServer = if ($env:CLIENTE -eq "gaesa") {
+            "192.168.102.7"
+          } else {
+            "192.168.200.11"
+          }
+          
+          $targetPath = if ($env:CLIENTE -eq "gaesa") {
+            "/var/www/appgaesa/src/modulos/"
+          } else {
+            "/home/gaesa/src/modulos/$env:CLIENTE/"
+          }
+          
+          $restartCommand = if ($env:CLIENTE -eq "gaesa") {
+            "systemctl restart appgaesa"
+          } else {
+            "docker restart $env:CLIENTE"
+          }
+          
+          $command = "sshpass -p '$env:SSH_PASSWORD' rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete ./src/modulos/ $env:SSH_USER@$targetServer`:$targetPath && sshpass -p '$env:SSH_PASSWORD' ssh -o StrictHostKeyChecking=no $env:SSH_USER@$targetServer '$restartCommand'"
+          wsl -e bash -c "$command"
