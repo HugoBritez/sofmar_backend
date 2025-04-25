@@ -44,6 +44,8 @@ jobs:
           
           $restartCommand = if ($env:CLIENTE -eq "gaesa") {
             "systemctl restart appgaesa"
+          } elseif ($env:CLIENTE -eq "gaesademo") {
+            "docker restart gaesa"
           } else {
             "docker restart $env:CLIENTE"
           }
@@ -58,9 +60,7 @@ jobs:
       matrix:
         cliente: [
           'gaesa',
-          'gaesademo',
-          'lobeck'
-          # Aquí puedes agregar más clientes según necesites
+          'gaesademo'
         ]
       fail-fast: false
       
@@ -89,6 +89,8 @@ jobs:
           
           $restartCommand = if ($env:CLIENTE -eq "gaesa") {
             "systemctl restart appgaesa"
+          } elseif ($env:CLIENTE -eq "gaesademo") {
+            "docker restart gaesa"
           } else {
             "docker restart $env:CLIENTE"
           }
