@@ -15,7 +15,9 @@ module.exports = function(dbInyectada) {
             where += ` AND pro_razon LIKE '%${busqueda}%'`;
         }
 
-        const query = `SELECT pro_codigo, pro_razon FROM proveedores WHERE 1=1 ${where} limit 25`;
+        const query = `SELECT pro_codigo, pro_razon, zo.zo_descripcion as pro_zona FROM proveedores p
+        LEFT JOIN zonas zo ON zo.zo_codigo = p.pro_zona
+        WHERE 1=1 ${where} limit 25`;
         return db.sql(query);
     }
 

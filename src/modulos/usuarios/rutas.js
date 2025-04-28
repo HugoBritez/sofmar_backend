@@ -24,10 +24,11 @@ async function vendedores(req, res, next){
     }
 }
 
+
 async function verificarUsuario(req, res, next){
     try {
         const items = await controlador.verificarUsuario(req.params.user);
-        respuesta.success(req, res, items,200); 
+        respuesta.success(req, res, items,200);  
     } catch (err) {
         next(err);
     }

@@ -633,6 +633,7 @@ module.exports = function (dbInyectada) {
       DATE_FORMAT(ve_fecha, '%d/%m/%Y') as fecha,
       ve_factura as factura,
       cli.cli_razon as cliente,
+      zo.zo_descripcion as cliente_zona,
       IF(ve_credito = 1, 'Credito', 'Contado') as condicion,
       m.mo_descripcion as moneda,
       ve_total as monto,
@@ -642,6 +643,7 @@ module.exports = function (dbInyectada) {
       LEFT JOIN clientes cli ON cli.cli_codigo = v.ve_cliente
       LEFT JOIN monedas m ON m.mo_codigo = v.ve_moneda
       LEFT JOIN operadores op ON op.op_codigo = v.ve_vendedor
+      LEFT JOIN zonas zo ON zo.zo_codigo = cli.cli_zona
       WHERE v.ve_estado = 1 AND v.ve_fecha BETWEEN '${fecha_desde}' AND '${fecha_hasta}'
       ${whereCliente}
       AND NOT EXISTS (
@@ -690,7 +692,7 @@ module.exports = function (dbInyectada) {
       DATE_FORMAT(p_fecha, '%d/%m/%Y') as fecha,
       cli.cli_razon as cliente,
       IF(p_credito = 1, 'Credito', 'Contado') as condicion,
-
+      zo.zo_descripcion as cliente_zona,
       m.mo_descripcion as moneda,
       p_obs as observacion,
       op.op_nombre as vendedor,
@@ -699,6 +701,7 @@ module.exports = function (dbInyectada) {
       LEFT JOIN monedas m ON m.mo_codigo = p.p_moneda
       LEFT JOIN clientes cli ON cli.cli_codigo = p.p_cliente
       LEFT JOIN operadores op ON op.op_codigo = p.p_operador
+      LEFT JOIN zonas zo ON zo.zo_codigo = cli.cli_zona
       WHERE p.p_estado = 1 
       AND p.p_fecha BETWEEN '${fecha_desde}' AND '${fecha_hasta}'
       ${whereCliente}

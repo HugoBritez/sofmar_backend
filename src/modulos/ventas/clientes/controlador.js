@@ -31,6 +31,7 @@ module.exports = function(dbInyectada) {
             cli_ruc,
             cli_interno,
             cli_ciudad,
+            zo.zo_descripcion as zona,
             ciu.ciu_descripcion as cli_ciudad_descripcion,
             dep.dep_codigo as cli_departamento,
             dep.dep_descripcion,
@@ -62,6 +63,7 @@ module.exports = function(dbInyectada) {
         INNER JOIN ciudades ciu ON cli_ciudad = ciu.ciu_codigo
         INNER JOIN distritos d ON ciu.ciu_distrito = d.d_codigo
         INNER JOIN departamentos dep ON cli_departamento = dep.dep_codigo
+        LEFT JOIN zonas zo ON zo.zo_codigo = cli_zona
         ${where} ${limite ? `LIMIT ${limite}` : "LIMIT 5"}`;
 
       console.log(query);
