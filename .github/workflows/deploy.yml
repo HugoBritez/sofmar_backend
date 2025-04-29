@@ -23,35 +23,29 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Deploy using WSL
-        shell: powershell
+      - name: Deploy using SSH
+        shell: bash
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
           SSH_USER: root
           CLIENTE: ${{ github.event.inputs.cliente }}
         run: |
-          $targetServer = if ($env:CLIENTE -eq "gaesa") {
-            "192.168.102.7"
-          } else {
-            "192.168.200.11"
-          }
+          if [ "$CLIENTE" = "gaesa" ]; then
+            targetServer="192.168.102.7"
+            targetPath="/var/www/appgaesa/src/modulos/"
+            restartCommand="systemctl restart appgaesa"
+          else
+            targetServer="192.168.200.11"
+            targetPath="/home/gaesa/src/modulos/$CLIENTE/"
+            if [ "$CLIENTE" = "gaesademo" ]; then
+              restartCommand="docker restart gaesa"
+            else
+              restartCommand="docker restart $CLIENTE"
+            fi
+          fi
           
-          $targetPath = if ($env:CLIENTE -eq "gaesa") {
-            "/var/www/appgaesa/src/modulos/"
-          } else {
-            "/home/gaesa/src/modulos/$env:CLIENTE/"
-          }
-          
-          $restartCommand = if ($env:CLIENTE -eq "gaesa") {
-            "systemctl restart appgaesa"
-          } elseif ($env:CLIENTE -eq "gaesademo") {
-            "docker restart gaesa"
-          } else {
-            "docker restart $env:CLIENTE"
-          }
-          
-          $command = "sshpass -p '$env:SSH_PASSWORD' rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete ./src/modulos/ $env:SSH_USER@$targetServer`:$targetPath && sshpass -p '$env:SSH_PASSWORD' ssh -o StrictHostKeyChecking=no $env:SSH_USER@$targetServer '$restartCommand'"
-          wsl -e bash -c "$command"
+          sshpass -p "$SSH_PASSWORD" rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete ./src/modulos/ "$SSH_USER@$targetServer:$targetPath" && \
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "$restartCommand"
 
   deploy-all:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -68,32 +62,26 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Deploy using WSL
-        shell: powershell
+      - name: Deploy using SSH
+        shell: bash
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
           SSH_USER: root
           CLIENTE: ${{ matrix.cliente }}
         run: |
-          $targetServer = if ($env:CLIENTE -eq "gaesa") {
-            "192.168.102.7"
-          } else {
-            "192.168.200.11"
-          }
+          if [ "$CLIENTE" = "gaesa" ]; then
+            targetServer="192.168.102.7"
+            targetPath="/var/www/appgaesa/src/modulos/"
+            restartCommand="systemctl restart appgaesa"
+          else
+            targetServer="192.168.200.11"
+            targetPath="/home/gaesa/src/modulos/$CLIENTE/"
+            if [ "$CLIENTE" = "gaesademo" ]; then
+              restartCommand="docker restart gaesa"
+            else
+              restartCommand="docker restart $CLIENTE"
+            fi
+          fi
           
-          $targetPath = if ($env:CLIENTE -eq "gaesa") {
-            "/var/www/appgaesa/src/modulos/"
-          } else {
-            "/home/gaesa/src/modulos/$env:CLIENTE/"
-          }
-          
-          $restartCommand = if ($env:CLIENTE -eq "gaesa") {
-            "systemctl restart appgaesa"
-          } elseif ($env:CLIENTE -eq "gaesademo") {
-            "docker restart gaesa"
-          } else {
-            "docker restart $env:CLIENTE"
-          }
-          
-          $command = "sshpass -p '$env:SSH_PASSWORD' rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete ./src/modulos/ $env:SSH_USER@$targetServer`:$targetPath && sshpass -p '$env:SSH_PASSWORD' ssh -o StrictHostKeyChecking=no $env:SSH_USER@$targetServer '$restartCommand'"
-          wsl -e bash -c "$command"
+          sshpass -p "$SSH_PASSWORD" rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete ./src/modulos/ "$SSH_USER@$targetServer:$targetPath" && \
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "$restartCommand"
