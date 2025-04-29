@@ -359,7 +359,7 @@ module.exports = function (dbInyectada) {
       throw error;
     }
   }
-
+//afsds
   async function reporteIngresos(
     deposito,
     sucursal,
