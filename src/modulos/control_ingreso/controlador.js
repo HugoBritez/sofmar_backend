@@ -212,13 +212,13 @@ module.exports = function (dbInyectada) {
         // 3.1 Verificar existencia de lotes
         const [existeLoteTransitorio, existeLoteDestino] = await Promise.all([
           db.sql(`
-            SELECT al_codigo FROM articulos_lotes
+            SELECT al_codigo, al_cantidad FROM articulos_lotes
             WHERE al_deposito = ${deposito_transitorio}
             AND al_articulo = ${item.id_articulo}
             AND al_lote = '${item.lote}'
           `),
           db.sql(`
-            SELECT al_codigo FROM articulos_lotes
+            SELECT al_codigo, al_cantidad FROM articulos_lotes
             WHERE al_deposito = ${deposito_destino}
             AND al_articulo = ${item.id_articulo}
             AND al_lote = '${item.lote}'
@@ -227,10 +227,12 @@ module.exports = function (dbInyectada) {
 
         const id_lote_transitorio = existeLoteTransitorio[0]?.al_codigo;
         const id_lote_destino = existeLoteDestino[0]?.al_codigo;
+        const cantidadActualDestino = existeLoteDestino[0]?.al_cantidad || 0;
 
-        console.log('Verificando existencia de lotes:', {
+        console.log('Estado actual de lotes:', {
             lote_transitorio: id_lote_transitorio ? 'Encontrado' : 'No encontrado',
-            lote_destino: existeLoteDestino.length > 0 ? 'Encontrado' : 'No encontrado'
+            lote_destino: existeLoteDestino.length > 0 ? 'Encontrado' : 'No encontrado',
+            cantidad_actual_destino: cantidadActualDestino
         });
 
         if (!id_lote_transitorio) {
@@ -245,15 +247,22 @@ module.exports = function (dbInyectada) {
         if (existeLoteDestino.length > 0) {
           console.log('Actualizando lotes existentes');
           let cantidad_transitorio = 0;
-          let cantidad_destino = item.cantidad_ingreso;
+          
+          // Calcular cantidad final sumando lo que había (incluso si es negativo) más lo que ingresa
+          const cantidad_destino = cantidadActualDestino + item.cantidad_ingreso;
 
           if (item.cantidad_factura > item.cantidad_ingreso) {
             cantidad_transitorio = item.cantidad_factura - item.cantidad_ingreso;
-            cantidad_destino = item.cantidad_ingreso;
           } else if (item.cantidad_factura < item.cantidad_ingreso) {
             cantidad_transitorio = item.cantidad_factura - item.cantidad_ingreso;
-            cantidad_destino = item.cantidad_ingreso;
           }
+
+          console.log('Cantidades calculadas:', {
+            cantidad_actual: cantidadActualDestino,
+            cantidad_ingreso: item.cantidad_ingreso,
+            cantidad_final: cantidad_destino,
+            cantidad_transitorio
+          });
 
           await db.sql(`
             UPDATE articulos_lotes
@@ -267,13 +276,6 @@ module.exports = function (dbInyectada) {
             WHERE al_codigo = ${id_lote_destino}
           `);
 
-          console.log('Cantidades calculadas:', {
-            cantidad_transitorio,
-            cantidad_destino,
-            cantidad_factura: item.cantidad_factura,
-            cantidad_ingreso: item.cantidad_ingreso
-          });
-
           id_lote_destino_final = id_lote_destino;
         } else {
           console.log('Creando nuevo lote en destino');
@@ -282,10 +284,8 @@ module.exports = function (dbInyectada) {
 
           if (item.cantidad_factura > item.cantidad_ingreso) {
             cantidad_transitorio = item.cantidad_factura - item.cantidad_ingreso;
-            cantidad_destino = item.cantidad_ingreso;
           } else if (item.cantidad_factura < item.cantidad_ingreso) {
             cantidad_transitorio = item.cantidad_factura - item.cantidad_ingreso;
-            cantidad_destino = item.cantidad_ingreso;
           }
 
           await db.sql(`
@@ -309,14 +309,6 @@ module.exports = function (dbInyectada) {
 
           const nuevo_id_lote_destino = await db.sql("SELECT LAST_INSERT_ID() as id");
           id_lote_destino_final = nuevo_id_lote_destino[0].id;
-          console.log('Nuevo lote creado con ID:', id_lote_destino_final);
-
-          console.log('Cantidades calculadas para nuevo lote:', {
-            cantidad_transitorio,
-            cantidad_destino,
-            cantidad_factura: item.cantidad_factura,
-            cantidad_ingreso: item.cantidad_ingreso
-          });
         }
 
         // 3.3 Registrar transferencia del item
@@ -334,7 +326,7 @@ module.exports = function (dbInyectada) {
 
         const id_transferencia_item = await db.sql("SELECT LAST_INSERT_ID() as id");
 
-        // 3.4 Registrar la transferencia del vencimineto del item
+        // 3.4 Registrar la transferencia del vencimiento del item
         await db.sql(`
           INSERT INTO transferencias_items_vencimiento (
             tiv_id_ti,
