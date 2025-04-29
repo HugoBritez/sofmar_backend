@@ -209,7 +209,7 @@ module.exports = function (dbInyectada) {
         await db.sql("START TRANSACTION");
         console.log('Subtransacción iniciada para el item');
 
-        // 3.1 Verificar existencia de lotes
+        // 3.1 Verificar existencia de lotes y sus cantidades actuales
         const [existeLoteTransitorio, existeLoteDestino] = await Promise.all([
           db.sql(`
             SELECT al_codigo, al_cantidad FROM articulos_lotes
@@ -226,13 +226,15 @@ module.exports = function (dbInyectada) {
         ]);
 
         const id_lote_transitorio = existeLoteTransitorio[0]?.al_codigo;
+        const cantidadActualTransitorio = existeLoteTransitorio[0]?.al_cantidad || 0;
         const id_lote_destino = existeLoteDestino[0]?.al_codigo;
         const cantidadActualDestino = existeLoteDestino[0]?.al_cantidad || 0;
 
         console.log('Estado actual de lotes:', {
             lote_transitorio: id_lote_transitorio ? 'Encontrado' : 'No encontrado',
+            cantidad_transitorio: cantidadActualTransitorio,
             lote_destino: existeLoteDestino.length > 0 ? 'Encontrado' : 'No encontrado',
-            cantidad_actual_destino: cantidadActualDestino
+            cantidad_destino: cantidadActualDestino
         });
 
         if (!id_lote_transitorio) {
@@ -246,22 +248,19 @@ module.exports = function (dbInyectada) {
         // 3.2 Procesar cantidades según caso
         if (existeLoteDestino.length > 0) {
           console.log('Actualizando lotes existentes');
-          let cantidad_transitorio = 0;
           
-          // Calcular cantidad final sumando lo que había (incluso si es negativo) más lo que ingresa
+          // El transitorio siempre se reduce por la cantidad que se transfiere
+          const cantidad_transitorio = cantidadActualTransitorio - item.cantidad_ingreso;
+          
+          // El destino suma la cantidad que ingresa a su cantidad actual (sea positiva o negativa)
           const cantidad_destino = cantidadActualDestino + item.cantidad_ingreso;
 
-          if (item.cantidad_factura > item.cantidad_ingreso) {
-            cantidad_transitorio = item.cantidad_factura - item.cantidad_ingreso;
-          } else if (item.cantidad_factura < item.cantidad_ingreso) {
-            cantidad_transitorio = item.cantidad_factura - item.cantidad_ingreso;
-          }
-
           console.log('Cantidades calculadas:', {
-            cantidad_actual: cantidadActualDestino,
+            cantidad_actual_transitorio: cantidadActualTransitorio,
+            cantidad_actual_destino: cantidadActualDestino,
             cantidad_ingreso: item.cantidad_ingreso,
-            cantidad_final: cantidad_destino,
-            cantidad_transitorio
+            cantidad_final_transitorio: cantidad_transitorio,
+            cantidad_final_destino: cantidad_destino
           });
 
           await db.sql(`
@@ -279,14 +278,19 @@ module.exports = function (dbInyectada) {
           id_lote_destino_final = id_lote_destino;
         } else {
           console.log('Creando nuevo lote en destino');
-          let cantidad_transitorio = 0;
-          let cantidad_destino = item.cantidad_ingreso;
+          
+          // El transitorio se reduce por la cantidad que se transfiere
+          const cantidad_transitorio = cantidadActualTransitorio - item.cantidad_ingreso;
+          
+          // Al ser nuevo lote, la cantidad es directamente la que ingresa
+          const cantidad_destino = item.cantidad_ingreso;
 
-          if (item.cantidad_factura > item.cantidad_ingreso) {
-            cantidad_transitorio = item.cantidad_factura - item.cantidad_ingreso;
-          } else if (item.cantidad_factura < item.cantidad_ingreso) {
-            cantidad_transitorio = item.cantidad_factura - item.cantidad_ingreso;
-          }
+          console.log('Cantidades calculadas para nuevo lote:', {
+            cantidad_actual_transitorio: cantidadActualTransitorio,
+            cantidad_ingreso: item.cantidad_ingreso,
+            cantidad_final_transitorio: cantidad_transitorio,
+            cantidad_final_destino: cantidad_destino
+          });
 
           await db.sql(`
             UPDATE articulos_lotes
@@ -359,7 +363,7 @@ module.exports = function (dbInyectada) {
       throw error;
     }
   }
-//afsds
+
   async function reporteIngresos(
     deposito,
     sucursal,
