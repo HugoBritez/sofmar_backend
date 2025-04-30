@@ -31,21 +31,25 @@ jobs:
           SSH_USER: root
           CLIENTE: ${{ github.event.inputs.cliente }}
         run: |
-          if [ "$CLIENTE" = "gaesa" ]; then
-            targetServer="192.168.102.7"
-            targetPath="/var/www/appgaesa/src/modulos/"
-            restartCommand="systemctl restart appgaesa"
-          else
-            targetServer="192.168.200.11"
-            targetPath="/home/gaesa/src/modulos/$CLIENTE/"
-            if [ "$CLIENTE" = "gaesademo" ]; then
-              restartCommand="docker restart gaesa"
-            else
-              restartCommand="docker restart $CLIENTE"
-            fi
-          fi
+          # Configuración de despliegue por cliente
+          declare -A CLIENT_CONFIG
+          CLIENT_CONFIG["gaesa"]="192.168.102.7:/var/www/appgaesa/src/modulos/:systemctl restart appgaesa"
+          CLIENT_CONFIG["gaesademo"]="192.168.200.11:/home/gaesa/src/modulos/gaesademo/:docker restart gaesa"
+          CLIENT_CONFIG["acricolor"]="192.168.200.11:/home/acricolor/src/modulos/:docker restart acricolor"
           
-          sshpass -p "$SSH_PASSWORD" rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete ./src/modulos/ "$SSH_USER@$targetServer:$targetPath" && \
+          # Obtener configuración del cliente
+          IFS=':' read -r targetServer targetPath restartCommand <<< "${CLIENT_CONFIG[$CLIENTE]}"
+          
+          # Asegurar que el directorio existe y tiene los permisos correctos
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "mkdir -p $targetPath && chmod -R 755 $targetPath"
+          
+          # Realizar el despliegue
+          sshpass -p "$SSH_PASSWORD" rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete ./src/modulos/ "$SSH_USER@$targetServer:$targetPath"
+          
+          # Asegurar permisos después del despliegue
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "chmod -R 755 $targetPath"
+          
+          # Reiniciar el servicio
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "$restartCommand"
 
   deploy-all:
@@ -71,19 +75,23 @@ jobs:
           SSH_USER: root
           CLIENTE: ${{ matrix.cliente }}
         run: |
-          if [ "$CLIENTE" = "gaesa" ]; then
-            targetServer="192.168.102.7"
-            targetPath="/var/www/appgaesa/src/modulos/"
-            restartCommand="systemctl restart appgaesa"
-          else
-            targetServer="192.168.200.11"
-            targetPath="/home/gaesa/src/modulos/$CLIENTE/"
-            if [ "$CLIENTE" = "gaesademo" ]; then
-              restartCommand="docker restart gaesa"
-            else
-              restartCommand="docker restart $CLIENTE"
-            fi
-          fi
+          # Configuración de despliegue por cliente
+          declare -A CLIENT_CONFIG
+          CLIENT_CONFIG["gaesa"]="192.168.102.7:/var/www/appgaesa/src/modulos/:systemctl restart appgaesa"
+          CLIENT_CONFIG["gaesademo"]="192.168.200.11:/home/gaesa/src/modulos/gaesademo/:docker restart gaesa"
+          CLIENT_CONFIG["acricolor"]="192.168.200.11:/home/acricolor/src/modulos/:docker restart acricolor"
           
-          sshpass -p "$SSH_PASSWORD" rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete ./src/modulos/ "$SSH_USER@$targetServer:$targetPath" && \
+          # Obtener configuración del cliente
+          IFS=':' read -r targetServer targetPath restartCommand <<< "${CLIENT_CONFIG[$CLIENTE]}"
+          
+          # Asegurar que el directorio existe y tiene los permisos correctos
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "mkdir -p $targetPath && chmod -R 755 $targetPath"
+          
+          # Realizar el despliegue
+          sshpass -p "$SSH_PASSWORD" rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete ./src/modulos/ "$SSH_USER@$targetServer:$targetPath"
+          
+          # Asegurar permisos después del despliegue
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "chmod -R 755 $targetPath"
+          
+          # Reiniciar el servicio
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "$restartCommand"
