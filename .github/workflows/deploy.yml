@@ -13,6 +13,7 @@ on:
         options:
           - gaesa
           - gaesademo
+          - acricolor
 
 jobs:
   deploy-single:
@@ -54,7 +55,8 @@ jobs:
       matrix:
         cliente: [
           'gaesa',
-          'gaesademo'
+          'gaesademo',
+          'acricolor'
         ]
       fail-fast: false
       

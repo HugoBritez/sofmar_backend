@@ -6,7 +6,7 @@ dotenv.config();
 class MatarDbService {
   constructor() {
     this.pool = mysql.createPool({
-      host: "192.168.200.3",
+      host: "192.168.102.6",
       user: "root",
       password: "170520061968",
       database: "mysql",
