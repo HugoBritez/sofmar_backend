@@ -13,7 +13,8 @@ on:
         options:
           - gaesa
           - gaesademo
-          - acricolor
+          #- acricolor
+          - medical
 
 jobs:
   deploy-single:
@@ -36,6 +37,7 @@ jobs:
           CLIENT_CONFIG["gaesa"]="192.168.102.7:/var/www/appgaesa/src/:systemctl restart appgaesa"
           CLIENT_CONFIG["gaesademo"]="192.168.200.11:/home/gaesa/src/:docker restart gaesa"
           CLIENT_CONFIG["acricolor"]="192.168.200.11:/home/acricolor/src/:docker restart acricolor"
+          CLIENT_CONFIG["medical"]="192.168.200.11:/home/medical/src/:docker restart medical"
           
           # Obtener configuración del cliente
           IFS=':' read -r targetServer targetPath restartCommand <<< "${CLIENT_CONFIG[$CLIENTE]}"
@@ -60,7 +62,8 @@ jobs:
         cliente: [
           'gaesa',
           'gaesademo',
-          'acricolor'
+          #'acricolor'
+          'medical'
         ]
       fail-fast: false
       
@@ -79,7 +82,8 @@ jobs:
           declare -A CLIENT_CONFIG
           CLIENT_CONFIG["gaesa"]="192.168.102.7:/var/www/appgaesa/src/:systemctl restart appgaesa"
           CLIENT_CONFIG["gaesademo"]="192.168.200.11:/home/gaesa/src/:docker restart gaesa"
-          CLIENT_CONFIG["acricolor"]="192.168.200.11:/home/acricolor/src/:docker restart acricolor"
+          #CLIENT_CONFIG["acricolor"]="192.168.200.11:/home/acricolor/src/:docker restart acricolor"
+          CLIENT_CONFIG["medical"]="192.168.200.11:/home/medical/src/:docker restart medical"
           
           # Obtener configuración del cliente
           IFS=':' read -r targetServer targetPath restartCommand <<< "${CLIENT_CONFIG[$CLIENTE]}"

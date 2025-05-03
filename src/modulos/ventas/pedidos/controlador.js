@@ -66,6 +66,7 @@ module.exports = function (dbInyectada) {
           WHERE arse.ac_area = p.p_area
         ), '-') as siguiente_area,
         IF(p.p_estado = 1, 'Pendiente', IF(p.p_estado = 2, 'Facturado', 'Todos')) as estado,
+        p.p_estado as estado_num,
         IF(p.p_credito = 1, 'Crédito', 'Contado') as condicion,
         op.op_nombre as operador,
         ope.op_nombre as vendedor,

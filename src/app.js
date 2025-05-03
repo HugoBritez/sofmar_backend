@@ -111,6 +111,10 @@ app.use(
         "https://concrecar.sofmar.com.py",
         "https://lobeck.sofmar.com.py",
         "https://gaesademo.sofmar.com.py",
+        "https://ferrehanh.sofmar.com.py",
+        "https://webapp.gaesa.com.py",
+        "https://webapp.caofa.com.py",
+        "https://medical.sofmar.com.py"
       ];
       const origin = res.req.headers.origin;
       if (allowedOrigins.includes(origin)) {
@@ -131,6 +135,7 @@ let corsOptions = {
     "https://ferrehanh.sofmar.com.py",
     "https://webapp.gaesa.com.py",
     "https://webapp.caofa.com.py",
+    "https://medical.sofmar.com.py"
   ],
   optionsSuccessStatus: 200,
 };
