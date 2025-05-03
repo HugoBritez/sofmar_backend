@@ -11,7 +11,7 @@ on:
         required: true
         type: choice
         options:
-          - gaesa
+          #- gaesa
           - gaesademo
           #- acricolor
           - medical
@@ -34,25 +34,51 @@ jobs:
         run: |
           # Configuración de despliegue por cliente
           declare -A CLIENT_CONFIG
-          CLIENT_CONFIG["gaesa"]="192.168.102.7:/var/www/appgaesa/src/:systemctl restart appgaesa"
+          #CLIENT_CONFIG["gaesa"]="192.168.102.7:/var/www/appgaesa/src/:systemctl restart appgaesa"
           CLIENT_CONFIG["gaesademo"]="192.168.200.11:/home/gaesa/src/:docker restart gaesa"
-          CLIENT_CONFIG["acricolor"]="192.168.200.11:/home/acricolor/src/:docker restart acricolor"
+          #CLIENT_CONFIG["acricolor"]="192.168.200.11:/home/acricolor/src/:docker restart acricolor"
           CLIENT_CONFIG["medical"]="192.168.200.11:/home/medical/src/:docker restart medical"
           
           # Obtener configuración del cliente
           IFS=':' read -r targetServer targetPath restartCommand <<< "${CLIENT_CONFIG[$CLIENTE]}"
           
+          echo "Iniciando despliegue para $CLIENTE..."
+          echo "Servidor: $targetServer"
+          echo "Ruta: $targetPath"
+          echo "Comando de reinicio: $restartCommand"
+          
           # Asegurar que el directorio existe y tiene los permisos correctos
+          echo "Asegurando directorio y permisos..."
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "mkdir -p $targetPath && chmod -R 755 $targetPath"
           
           # Realizar el despliegue (copiar todo excepto index.js)
+          echo "Realizando despliegue de archivos..."
           sshpass -p "$SSH_PASSWORD" rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete --exclude 'index.js' ./src/ "$SSH_USER@$targetServer:$targetPath"
           
           # Asegurar permisos después del despliegue
+          echo "Asegurando permisos después del despliegue..."
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "chmod -R 755 $targetPath"
           
+          # Actualizar la base de datos del cliente
+          DB_NAME=$CLIENTE
+          SQL_FILE="./src/DB/update.sql"
+          echo "Verificando archivo SQL: $SQL_FILE"
+          if [ -f "$SQL_FILE" ]; then
+            echo "Copiando script SQL al servidor de base de datos..."
+            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no "$SQL_FILE" "$SSH_USER@192.168.200.3:/tmp/update.sql"
+            echo "Ejecutando script SQL en la base de datos $DB_NAME..."
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@192.168.200.3" "mysql -u root -p'$SSH_PASSWORD' $DB_NAME < /tmp/update.sql"
+            echo "Eliminando script SQL del servidor remoto..."
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@192.168.200.3" "rm /tmp/update.sql"
+          else
+            echo "No existe el archivo de actualización SQL, saltando..."
+          fi
+          
           # Reiniciar el servicio
+          echo "Reiniciando servicio..."
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "$restartCommand"
+          
+          echo "Despliegue completado para $CLIENTE."
 
   deploy-all:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -60,7 +86,7 @@ jobs:
     strategy:
       matrix:
         cliente: [
-          'gaesa',
+          #'gaesa',
           'gaesademo',
           #'acricolor'
           'medical'
@@ -80,7 +106,7 @@ jobs:
         run: |
           # Configuración de despliegue por cliente
           declare -A CLIENT_CONFIG
-          CLIENT_CONFIG["gaesa"]="192.168.102.7:/var/www/appgaesa/src/:systemctl restart appgaesa"
+          #CLIENT_CONFIG["gaesa"]="192.168.102.7:/var/www/appgaesa/src/:systemctl restart appgaesa"
           CLIENT_CONFIG["gaesademo"]="192.168.200.11:/home/gaesa/src/:docker restart gaesa"
           #CLIENT_CONFIG["acricolor"]="192.168.200.11:/home/acricolor/src/:docker restart acricolor"
           CLIENT_CONFIG["medical"]="192.168.200.11:/home/medical/src/:docker restart medical"
@@ -88,14 +114,40 @@ jobs:
           # Obtener configuración del cliente
           IFS=':' read -r targetServer targetPath restartCommand <<< "${CLIENT_CONFIG[$CLIENTE]}"
           
+          echo "Iniciando despliegue para $CLIENTE..."
+          echo "Servidor: $targetServer"
+          echo "Ruta: $targetPath"
+          echo "Comando de reinicio: $restartCommand"
+          
           # Asegurar que el directorio existe y tiene los permisos correctos
+          echo "Asegurando directorio y permisos..."
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "mkdir -p $targetPath && chmod -R 755 $targetPath"
           
           # Realizar el despliegue (copiar todo excepto index.js)
+          echo "Realizando despliegue de archivos..."
           sshpass -p "$SSH_PASSWORD" rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete --exclude 'index.js' ./src/ "$SSH_USER@$targetServer:$targetPath"
           
           # Asegurar permisos después del despliegue
+          echo "Asegurando permisos después del despliegue..."
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "chmod -R 755 $targetPath"
           
+          # Actualizar la base de datos del cliente
+          DB_NAME=$CLIENTE
+          SQL_FILE="./src/DB/update.sql"
+          echo "Verificando archivo SQL: $SQL_FILE"
+          if [ -f "$SQL_FILE" ]; then
+            echo "Copiando script SQL al servidor de base de datos..."
+            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no "$SQL_FILE" "$SSH_USER@192.168.200.3:/tmp/update.sql"
+            echo "Ejecutando script SQL en la base de datos $DB_NAME..."
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@192.168.200.3" "mysql -u root -p'$SSH_PASSWORD' $DB_NAME < /tmp/update.sql"
+            echo "Eliminando script SQL del servidor remoto..."
+            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@192.168.200.3" "rm /tmp/update.sql"
+          else
+            echo "No existe el archivo de actualización SQL, saltando..."
+          fi
+          
           # Reiniciar el servicio
+          echo "Reiniciando servicio..."
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "$restartCommand"
+          
+          echo "Despliegue completado para $CLIENTE."
