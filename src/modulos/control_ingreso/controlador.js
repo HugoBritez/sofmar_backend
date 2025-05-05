@@ -215,13 +215,13 @@ module.exports = function (dbInyectada) {
             SELECT al_codigo, al_cantidad FROM articulos_lotes
             WHERE al_deposito = ${deposito_transitorio}
             AND al_articulo = ${item.id_articulo}
-            AND al_lote = '${item.lote}'
+            AND (al_lote = '${item.lote || ''}' OR (al_lote IS NULL AND '${item.lote || ''}' = ''))
           `),
           db.sql(`
             SELECT al_codigo, al_cantidad FROM articulos_lotes
             WHERE al_deposito = ${deposito_destino}
             AND al_articulo = ${item.id_articulo}
-            AND al_lote = '${item.lote}'
+            AND (al_lote = '${item.lote || ''}' OR (al_lote IS NULL AND '${item.lote || ''}' = ''))
           `)
         ]);
 
@@ -234,11 +234,12 @@ module.exports = function (dbInyectada) {
             lote_transitorio: id_lote_transitorio ? 'Encontrado' : 'No encontrado',
             cantidad_transitorio: cantidadActualTransitorio,
             lote_destino: existeLoteDestino.length > 0 ? 'Encontrado' : 'No encontrado',
-            cantidad_destino: cantidadActualDestino
+            cantidad_destino: cantidadActualDestino,
+            lote_item: item.lote || 'Sin lote'
         });
 
         if (!id_lote_transitorio) {
-          console.log(`ADVERTENCIA: No se encontró lote transitorio para artículo ${item.id_articulo}, saltando...`);
+          console.log(`ADVERTENCIA: No se encontró lote transitorio para artículo ${item.id_articulo} en deposito ${deposito_transitorio}, saltando...`);
           await db.sql("COMMIT");
           continue;
         }
@@ -260,7 +261,7 @@ module.exports = function (dbInyectada) {
           // El destino suma la cantidad que ingresa a su cantidad actual
           const cantidad_destino = cantidadActualDestinoNum + cantidadIngresoNum;
 
-          console.log('Cantidades calculadas:', {
+          console.log('Cantidades calculadas para lote existente del articulo:' + item.id_articulo + ' con lote ' + item.lote + ' en deposito ' + deposito_transitorio + ' y vencimiento ' + item.vencimiento, {
             cantidad_actual_transitorio: cantidadActualTransitorioNum,
             cantidad_actual_destino: cantidadActualDestinoNum,
             cantidad_ingreso: cantidadIngresoNum,
@@ -325,7 +326,7 @@ module.exports = function (dbInyectada) {
         }
 
         // 3.3 Registrar transferencia del item
-        const resultTransferenciaItem = await db.sql(`
+        await db.sql(`
           INSERT INTO transferencias_items (
             ti_transferencia, ti_articulo, ti_cantidad, ti_stock_actuald
           )
@@ -339,24 +340,26 @@ module.exports = function (dbInyectada) {
 
         const id_transferencia_item = await db.sql("SELECT LAST_INSERT_ID() as id");
 
-        // 3.4 Registrar la transferencia del vencimiento del item
-        await db.sql(`
-          INSERT INTO transferencias_items_vencimiento (
-            tiv_id_ti,
-            tiv_lote,
-            date_lote,
-            loteid,
-            loteidd
-          )
-          SELECT
-            ${id_transferencia_item[0].id},
-            al_lote,
-            al_vencimiento,
-            al_codigo,
-            al_codigo
-          FROM articulos_lotes
-          WHERE al_codigo = ${id_lote_destino_final}
-        `);
+        // 3.4 Registrar la transferencia del vencimiento del item solo si tiene lote
+        if (item.lote) {
+          await db.sql(`
+            INSERT INTO transferencias_items_vencimiento (
+              tiv_id_ti,
+              tiv_lote,
+              date_lote,
+              loteid,
+              loteidd
+            )
+            SELECT
+              ${id_transferencia_item[0].id},
+              al_lote,
+              al_vencimiento,
+              al_codigo,
+              al_codigo
+            FROM articulos_lotes
+            WHERE al_codigo = ${id_lote_destino_final}
+          `);
+        }
 
         await db.sql("COMMIT");
         console.log('Subtransacción completada exitosamente');

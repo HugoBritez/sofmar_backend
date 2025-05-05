@@ -11,9 +11,9 @@ on:
         required: true
         type: choice
         options:
-          #- gaesa
+          - gaesa
           - gaesademo
-          #- acricolor
+          - acricolor
           - medical
 
 jobs:
@@ -88,8 +88,8 @@ jobs:
         cliente: [
           'gaesa',
           'gaesademo',
-          #'acricolor'
-          #'medical'
+          'acricolor',
+          'medical'
         ]
       fail-fast: false
       
