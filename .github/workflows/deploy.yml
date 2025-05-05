@@ -86,10 +86,10 @@ jobs:
     strategy:
       matrix:
         cliente: [
-          #'gaesa',
+          'gaesa',
           'gaesademo',
           #'acricolor'
-          'medical'
+          #'medical'
         ]
       fail-fast: false
       

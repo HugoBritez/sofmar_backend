@@ -13,6 +13,7 @@ const https = require('https');
 https.createServer({
     cert: fs.readFileSync('server.cer'),
     key: fs.readFileSync('server.key')
-    }, app).listen(app.get('port'), () => {
-        console.log('Puerto habilitado: ', app.get('port'))  
-})
+}, app).listen(app.get('port'), '0.0.0.0', () => {
+    console.log('Puerto habilitado: ', app.get('port'));
+});
+

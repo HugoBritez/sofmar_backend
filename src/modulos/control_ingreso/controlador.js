@@ -249,16 +249,21 @@ module.exports = function (dbInyectada) {
         if (existeLoteDestino.length > 0) {
           console.log('Actualizando lotes existentes');
           
-          // El transitorio siempre se reduce por la cantidad que se transfiere
-          const cantidad_transitorio = cantidadActualTransitorio - item.cantidad_ingreso;
+          // Convertir a números para asegurar operaciones numéricas
+          const cantidadActualTransitorioNum = parseFloat(cantidadActualTransitorio) || 0;
+          const cantidadActualDestinoNum = parseFloat(cantidadActualDestino) || 0;
+          const cantidadIngresoNum = parseFloat(item.cantidad_ingreso) || 0;
           
-          // El destino suma la cantidad que ingresa a su cantidad actual (sea positiva o negativa)
-          const cantidad_destino = cantidadActualDestino + item.cantidad_ingreso;
+          // El transitorio siempre se reduce por la cantidad que se transfiere
+          const cantidad_transitorio = cantidadActualTransitorioNum - cantidadIngresoNum;
+          
+          // El destino suma la cantidad que ingresa a su cantidad actual
+          const cantidad_destino = cantidadActualDestinoNum + cantidadIngresoNum;
 
           console.log('Cantidades calculadas:', {
-            cantidad_actual_transitorio: cantidadActualTransitorio,
-            cantidad_actual_destino: cantidadActualDestino,
-            cantidad_ingreso: item.cantidad_ingreso,
+            cantidad_actual_transitorio: cantidadActualTransitorioNum,
+            cantidad_actual_destino: cantidadActualDestinoNum,
+            cantidad_ingreso: cantidadIngresoNum,
             cantidad_final_transitorio: cantidad_transitorio,
             cantidad_final_destino: cantidad_destino
           });
@@ -279,15 +284,19 @@ module.exports = function (dbInyectada) {
         } else {
           console.log('Creando nuevo lote en destino');
           
+          // Convertir a números para asegurar operaciones numéricas
+          const cantidadActualTransitorioNum = parseFloat(cantidadActualTransitorio) || 0;
+          const cantidadIngresoNum = parseFloat(item.cantidad_ingreso) || 0;
+          
           // El transitorio se reduce por la cantidad que se transfiere
-          const cantidad_transitorio = cantidadActualTransitorio - item.cantidad_ingreso;
+          const cantidad_transitorio = cantidadActualTransitorioNum - cantidadIngresoNum;
           
           // Al ser nuevo lote, la cantidad es directamente la que ingresa
-          const cantidad_destino = item.cantidad_ingreso;
+          const cantidad_destino = cantidadIngresoNum;
 
           console.log('Cantidades calculadas para nuevo lote:', {
-            cantidad_actual_transitorio: cantidadActualTransitorio,
-            cantidad_ingreso: item.cantidad_ingreso,
+            cantidad_actual_transitorio: cantidadActualTransitorioNum,
+            cantidad_ingreso: cantidadIngresoNum,
             cantidad_final_transitorio: cantidad_transitorio,
             cantidad_final_destino: cantidad_destino
           });

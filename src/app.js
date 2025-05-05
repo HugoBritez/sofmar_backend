@@ -108,6 +108,8 @@ app.use(
     setHeaders: (res, path, stat) => {
       const allowedOrigins = [
         "http://localhost:5173",
+        "http://172.20.192.38:5173",
+        "http://192.168.100.108:5173",
         "https://concrecar.sofmar.com.py",
         "https://lobeck.sofmar.com.py",
         "https://gaesademo.sofmar.com.py",
@@ -129,6 +131,8 @@ app.use(
 let corsOptions = {
   origin: [
     "http://localhost:5173",
+    "http://172.20.192.38:5173",
+    "http://192.168.100.108:5173",
     "https://concrecar.sofmar.com.py",
     "https://lobeck.sofmar.com.py",
     "https://gaesademo.sofmar.com.py",
@@ -136,6 +140,7 @@ let corsOptions = {
     "https://webapp.gaesa.com.py",
     "https://webapp.caofa.com.py",
     "https://medical.sofmar.com.py"
+
   ],
   optionsSuccessStatus: 200,
 };
@@ -150,6 +155,8 @@ app.use(function (err, req, res, next) {
 
 //configuraciones
 app.set("port", config.con.port);
+
+
 
 //rutas
 app.use("/api/usuarios", usuarios);

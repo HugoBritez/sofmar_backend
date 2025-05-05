@@ -101,6 +101,7 @@ INSERT IGNORE INTO `menu_sistemas` (m_codigo, m_descripcion, m_grupo, m_orden) V
     (0, 'w.Autorizacion ajuste de stock', 1, 50),
     (0, 'w.Control de ingresos', 1, 51);
 
+
 -- Actualizar menu_sistemas
 UPDATE menu_sistemas SET m_descripcion = 'Consulta planificaciones' WHERE m_grupo = 2 AND m_orden = 30;
 UPDATE menu_sistemas SET m_descripcion = 'Informe planificaciones' WHERE m_grupo = 2 AND m_orden = 31;
