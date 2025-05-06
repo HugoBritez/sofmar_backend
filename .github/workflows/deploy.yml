@@ -53,26 +53,26 @@ jobs:
           
           # Realizar el despliegue (copiar todo excepto index.js)
           echo "Realizando despliegue de archivos..."
-          sshpass -p "$SSH_PASSWORD" rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete --exclude 'index.js' ./src/ "$SSH_USER@$targetServer:$targetPath"
+          sshpass -p "$SSH_PASSWORD" rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete --exclude 'index.js' --exclude 'DB/' ./src/ "$SSH_USER@$targetServer:$targetPath"
           
           # Asegurar permisos después del despliegue
           echo "Asegurando permisos después del despliegue..."
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "chmod -R 755 $targetPath"
           
           # Actualizar la base de datos del cliente
-          DB_NAME=$CLIENTE
-          SQL_FILE="./src/DB/update.sql"
-          echo "Verificando archivo SQL: $SQL_FILE"
-          if [ -f "$SQL_FILE" ]; then
-            echo "Copiando script SQL al servidor de base de datos..."
-            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no "$SQL_FILE" "$SSH_USER@192.168.200.3:/tmp/update.sql"
-            echo "Ejecutando script SQL en la base de datos $DB_NAME..."
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@192.168.200.3" "mysql -u root -p'$SSH_PASSWORD' $DB_NAME < /tmp/update.sql"
-            echo "Eliminando script SQL del servidor remoto..."
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@192.168.200.3" "rm /tmp/update.sql"
-          else
-            echo "No existe el archivo de actualización SQL, saltando..."
-          fi
+          #DB_NAME=$CLIENTE
+          #SQL_FILE="./src/DB/update.sql"
+          #echo "Verificando archivo SQL: $SQL_FILE"
+          #if [ -f "$SQL_FILE" ]; then
+          #  echo "Copiando script SQL al servidor de base de datos..."
+          #  sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no "$SQL_FILE" "$SSH_USER@192.168.200.3:/tmp/update.sql"
+          #  echo "Ejecutando script SQL en la base de datos $DB_NAME..."
+          #  sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@192.168.200.3" "mysql -u root -p'$SSH_PASSWORD' $DB_NAME < /tmp/update.sql"
+          #  echo "Eliminando script SQL del servidor remoto..."
+          #  sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@192.168.200.3" "rm /tmp/update.sql"
+          #else
+          #  echo "No existe el archivo de actualización SQL, saltando..."
+          #fi
           
           # Reiniciar el servicio
           echo "Reiniciando servicio..."
@@ -125,26 +125,26 @@ jobs:
           
           # Realizar el despliegue (copiar todo excepto index.js)
           echo "Realizando despliegue de archivos..."
-          sshpass -p "$SSH_PASSWORD" rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete --exclude 'index.js' ./src/ "$SSH_USER@$targetServer:$targetPath"
+          sshpass -p "$SSH_PASSWORD" rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --delete --exclude 'index.js' --exclude 'DB/' ./src/ "$SSH_USER@$targetServer:$targetPath"
           
           # Asegurar permisos después del despliegue
           echo "Asegurando permisos después del despliegue..."
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$targetServer" "chmod -R 755 $targetPath"
           
           # Actualizar la base de datos del cliente
-          DB_NAME=$CLIENTE
-          SQL_FILE="./src/DB/update.sql"
-          echo "Verificando archivo SQL: $SQL_FILE"
-          if [ -f "$SQL_FILE" ]; then
-            echo "Copiando script SQL al servidor de base de datos..."
-            sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no "$SQL_FILE" "$SSH_USER@192.168.200.3:/tmp/update.sql"
-            echo "Ejecutando script SQL en la base de datos $DB_NAME..."
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@192.168.200.3" "mysql -u root -p'$SSH_PASSWORD' $DB_NAME < /tmp/update.sql"
-            echo "Eliminando script SQL del servidor remoto..."
-            sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@192.168.200.3" "rm /tmp/update.sql"
-          else
-            echo "No existe el archivo de actualización SQL, saltando..."
-          fi
+          #DB_NAME=$CLIENTE
+          #SQL_FILE="./src/DB/update.sql"
+          #echo "Verificando archivo SQL: $SQL_FILE"
+          #if [ -f "$SQL_FILE" ]; then
+          #  echo "Copiando script SQL al servidor de base de datos..."
+          #  sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no "$SQL_FILE" "$SSH_USER@192.168.200.3:/tmp/update.sql"
+          #  echo "Ejecutando script SQL en la base de datos $DB_NAME..."
+          #  sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@192.168.200.3" "mysql -u root -p'$SSH_PASSWORD' $DB_NAME < /tmp/update.sql"
+          #  echo "Eliminando script SQL del servidor remoto..."
+          #  sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@192.168.200.3" "rm /tmp/update.sql"
+          #else
+          #  echo "No existe el archivo de actualización SQL, saltando..."
+          #fi
           
           # Reiniciar el servicio
           echo "Reiniciando servicio..."
