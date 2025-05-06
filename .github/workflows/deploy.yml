@@ -34,7 +34,7 @@ jobs:
         run: |
           # Configuración de despliegue por cliente
           declare -A CLIENT_CONFIG
-          #CLIENT_CONFIG["gaesa"]="192.168.102.7:/var/www/appgaesa/src/:systemctl restart appgaesa"
+          CLIENT_CONFIG["gaesa"]="192.168.102.7:/var/www/appgaesa/src/:systemctl restart appgaesa"
           CLIENT_CONFIG["gaesademo"]="192.168.200.11:/home/gaesa/src/:docker restart gaesa"
           #CLIENT_CONFIG["acricolor"]="192.168.200.11:/home/acricolor/src/:docker restart acricolor"
           CLIENT_CONFIG["medical"]="192.168.200.11:/home/medical/src/:docker restart medical"
@@ -106,7 +106,7 @@ jobs:
         run: |
           # Configuración de despliegue por cliente
           declare -A CLIENT_CONFIG
-          #CLIENT_CONFIG["gaesa"]="192.168.102.7:/var/www/appgaesa/src/:systemctl restart appgaesa"
+          CLIENT_CONFIG["gaesa"]="192.168.102.7:/var/www/appgaesa/src/:systemctl restart appgaesa"
           CLIENT_CONFIG["gaesademo"]="192.168.200.11:/home/gaesa/src/:docker restart gaesa"
           #CLIENT_CONFIG["acricolor"]="192.168.200.11:/home/acricolor/src/:docker restart acricolor"
           CLIENT_CONFIG["medical"]="192.168.200.11:/home/medical/src/:docker restart medical"

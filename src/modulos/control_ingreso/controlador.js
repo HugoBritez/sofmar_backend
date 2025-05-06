@@ -212,16 +212,26 @@ module.exports = function (dbInyectada) {
         // 3.1 Verificar existencia de lotes y sus cantidades actuales
         const [existeLoteTransitorio, existeLoteDestino] = await Promise.all([
           db.sql(`
-            SELECT al_codigo, al_cantidad FROM articulos_lotes
-            WHERE al_deposito = ${deposito_transitorio}
-            AND al_articulo = ${item.id_articulo}
-            AND (al_lote = '${item.lote || ''}' OR (al_lote IS NULL AND '${item.lote || ''}' = ''))
+            SELECT al.al_codigo, al.al_cantidad, ar.ar_vencimiento
+            FROM articulos_lotes al
+            INNER JOIN articulos ar ON al.al_articulo = ar.ar_codigo
+            WHERE al.al_deposito = ${deposito_transitorio}
+            AND al.al_articulo = ${item.id_articulo}
+            AND (
+              (ar.ar_vencimiento = 0) OR 
+              (ar.ar_vencimiento = 1 AND al.al_lote = '${item.lote}')
+            )
           `),
           db.sql(`
-            SELECT al_codigo, al_cantidad FROM articulos_lotes
-            WHERE al_deposito = ${deposito_destino}
-            AND al_articulo = ${item.id_articulo}
-            AND (al_lote = '${item.lote || ''}' OR (al_lote IS NULL AND '${item.lote || ''}' = ''))
+            SELECT al.al_codigo, al.al_cantidad, ar.ar_vencimiento
+            FROM articulos_lotes al
+            INNER JOIN articulos ar ON al.al_articulo = ar.ar_codigo
+            WHERE al.al_deposito = ${deposito_destino}
+            AND al.al_articulo = ${item.id_articulo}
+            AND (
+              (ar.ar_vencimiento = 0) OR 
+              (ar.ar_vencimiento = 1 AND al.al_lote = '${item.lote}')
+            )
           `)
         ]);
 
@@ -229,12 +239,14 @@ module.exports = function (dbInyectada) {
         const cantidadActualTransitorio = existeLoteTransitorio[0]?.al_cantidad || 0;
         const id_lote_destino = existeLoteDestino[0]?.al_codigo;
         const cantidadActualDestino = existeLoteDestino[0]?.al_cantidad || 0;
+        const tieneControlVencimiento = existeLoteTransitorio[0]?.ar_vencimiento === 1;
 
         console.log('Estado actual de lotes:', {
             lote_transitorio: id_lote_transitorio ? 'Encontrado' : 'No encontrado',
             cantidad_transitorio: cantidadActualTransitorio,
             lote_destino: existeLoteDestino.length > 0 ? 'Encontrado' : 'No encontrado',
             cantidad_destino: cantidadActualDestino,
+            tiene_control_vencimiento: tieneControlVencimiento,
             lote_item: item.lote || 'Sin lote'
         });
 
@@ -340,8 +352,8 @@ module.exports = function (dbInyectada) {
 
         const id_transferencia_item = await db.sql("SELECT LAST_INSERT_ID() as id");
 
-        // 3.4 Registrar la transferencia del vencimiento del item solo si tiene lote
-        if (item.lote) {
+        // 3.4 Registrar la transferencia del vencimiento del item solo si tiene control de vencimiento
+        if (tieneControlVencimiento) {
           await db.sql(`
             INSERT INTO transferencias_items_vencimiento (
               tiv_id_ti,
